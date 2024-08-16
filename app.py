@@ -46,7 +46,7 @@ def get_scholarship_info(campo_estudio, pais, nivel_estudios, fecha_limite, solo
         }
     )
 
-    search_results = serper_response.json().get("organic", [])  # Tomamos todos los resultados
+    search_results = serper_response.json().get("organic", [])[:3]  # Tomamos los primeros 3 resultados
 
     return ai_response, search_results
 
