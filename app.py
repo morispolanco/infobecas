@@ -88,7 +88,10 @@ st.title("Buscador de Becas Vigentes")
 
 campo_estudio = st.text_input("Campo de estudio")
 pais = st.text_input("País de estudio")
-nivel_estudios = st.selectbox("Nivel de estudios", ["Pregrado", "Maestría", "Doctorado", "Postdoctorado"])
+nivel_estudios = st.selectbox("Nivel de estudios", [
+    "Pregrado", "Maestría", "Doctorado", "Postdoctorado", 
+    "Especialidad", "Curso", "Seminario"
+])
 pais_ciudadania = st.text_input("Mostrar solo becas disponibles para ciudadanos de (dejar en blanco si no aplica)")
 
 if st.button("Buscar becas vigentes"):
