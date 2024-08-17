@@ -99,18 +99,14 @@ fecha_limite = st.date_input("Fecha límite de aplicación (opcional)")
 if st.button("Buscar becas"):
     valid_scholarships, search_results = get_scholarship_info(campo_estudio, pais, nivel_estudios, pais_ciudadania, fecha_limite)
     
-    st.subheader("Becas vigentes encontradas")
+    st.subheader("Resultados")
     if valid_scholarships:
         for scholarship in valid_scholarships:
             st.markdown(scholarship)
             st.markdown("---")
-    else:
-        st.write("")
-    
-    st.subheader("Resultados de búsqueda relacionados")
     if search_results:
         for result in search_results:
             st.write(f"- [{result.get('title')}]({result.get('link')})")
             st.write(result.get('snippet', ''))
-    else:
-        st.write("No se encontraron resultados de búsqueda adicionales.")
+    if not valid_scholarships and not search_results:
+        st.write("")
