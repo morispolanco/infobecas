@@ -50,11 +50,7 @@ def get_scholarship_info(campo_estudio, pais, nivel_estudios, pais_ciudadania, f
     valid_scholarships = []
     for scholarship in scholarships:
         if scholarship.strip():
-            date_match = re.search(r'Fecha límite de aplicación:?\s*(\d{2}/\d{2}/\d{4})', scholarship)
-            if date_match:
-                deadline = parse_date(date_match.group(1))
-                if deadline and deadline >= date.today():  
-                    valid_scholarships.append(scholarship.strip())
+            valid_scholarships.append(scholarship.strip())
 
     search_results = []
     if campo_estudio or pais or nivel_estudios or pais_ciudadania or fecha_limite:
@@ -80,7 +76,7 @@ def get_scholarship_info(campo_estudio, pais, nivel_estudios, pais_ciudadania, f
                 "q": search_query
             }
         )
-        search_results = serper_response.json().get("organic", [])[:5]  # Limitamos a los 5 primeros resultados
+        search_results = serper_response.json().get("organic", [])  # No limitamos los resultados
 
     return valid_scholarships, search_results
 
