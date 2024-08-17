@@ -9,7 +9,6 @@ TOGETHER_API_KEY = st.secrets["TOGETHER_API_KEY"]
 SERPER_API_KEY = st.secrets["SERPER_API_KEY"]
 
 def parse_date(date_string):
-    # Intentar parsear fechas en varios formatos comunes
     formats = ['%d/%m/%Y', '%Y-%m-%d', '%d-%m-%Y', '%d %B %Y', '%B %d, %Y']
     for fmt in formats:
         try:
@@ -22,13 +21,18 @@ def get_scholarship_info(campo_estudio, pais, nivel_estudios, pais_ciudadania):
     today = date.today()
 
     # Construir el prompt para la API de Together
-    prompt = f"""Proporciona información sobre becas vigentes para estudiar {campo_estudio} en {pais} para nivel {nivel_estudios}.
-    Es crucial que solo incluyas convocatorias cuya fecha límite de entrega de documentos sea posterior a {today.strftime('%d/%m/%Y')}.
-    Si no hay información clara sobre la fecha límite de la convocatoria, no la incluyas.
-    """
+    prompt = "Proporciona información sobre becas vigentes"
+    if campo_estudio:
+        prompt += f" para estudiar {campo_estudio}"
+    if pais:
+        prompt += f" en {pais}"
+    if nivel_estudios:
+        prompt += f" para nivel {nivel_estudios}"
+    prompt += f". Es crucial que solo incluyas convocatorias cuya fecha límite de entrega de documentos sea posterior a {today.strftime('%d/%m/%Y')}. "
+    prompt += "Si no hay información clara sobre la fecha límite de la convocatoria, no la incluyas. "
     if pais_ciudadania:
-        prompt += f" Incluye solo becas disponibles para ciudadanos de {pais_ciudadania}."
-    prompt += """ Para cada beca, proporciona la siguiente información en formato estructurado:
+        prompt += f"Incluye solo becas disponibles para ciudadanos de {pais_ciudadania}. "
+    prompt += """Para cada beca, proporciona la siguiente información en formato estructurado:
     1. Nombre de la beca
     2. Institución que la otorga
     3. Requisitos básicos
@@ -57,7 +61,6 @@ def get_scholarship_info(campo_estudio, pais, nivel_estudios, pais_ciudadania):
     valid_scholarships = []
     for scholarship in scholarships:
         if scholarship.strip():
-            # Buscar la fecha límite en el texto de la beca
             date_match = re.search(r'Fecha límite de aplicación:?\s*(\d{2}/\d{2}/\d{4})', scholarship)
             if date_match:
                 deadline = parse_date(date_match.group(1))
@@ -66,7 +69,13 @@ def get_scholarship_info(campo_estudio, pais, nivel_estudios, pais_ciudadania):
 
     # Llamada a la API de Serper para obtener resultados de búsqueda relacionados
     current_year = datetime.now().year
-    search_query = f"becas vigentes {campo_estudio} {pais} {nivel_estudios} {current_year}"
+    search_query = f"becas vigentes {current_year}"
+    if campo_estudio:
+        search_query += f" {campo_estudio}"
+    if pais:
+        search_query += f" {pais}"
+    if nivel_estudios:
+        search_query += f" {nivel_estudios}"
     if pais_ciudadania:
         search_query += f" para ciudadanos de {pais_ciudadania}"
     serper_response = requests.post(
@@ -86,32 +95,29 @@ def get_scholarship_info(campo_estudio, pais, nivel_estudios, pais_ciudadania):
 # Interfaz de Streamlit
 st.title("Buscador de Becas Vigentes")
 
-campo_estudio = st.text_input("Campo de estudio")
-pais = st.text_input("País de estudio")
-nivel_estudios = st.selectbox("Nivel de estudios", [
-    "Pregrado", "Maestría", "Doctorado", "Postdoctorado", 
+campo_estudio = st.text_input("Campo de estudio (opcional)")
+pais = st.text_input("País de estudio (opcional)")
+nivel_estudios = st.selectbox("Nivel de estudios (opcional)", [
+    "", "Pregrado", "Maestría", "Doctorado", "Postdoctorado", 
     "Especialidad", "Curso", "Seminario"
 ])
-pais_ciudadania = st.text_input("Mostrar solo becas disponibles para ciudadanos de (dejar en blanco si no aplica)")
+pais_ciudadania = st.text_input("Mostrar solo becas disponibles para ciudadanos de (opcional)")
 
 if st.button("Buscar becas vigentes"):
-    if campo_estudio and pais and nivel_estudios:
-        valid_scholarships, search_results = get_scholarship_info(campo_estudio, pais, nivel_estudios, pais_ciudadania)
-        
-        st.subheader("Becas vigentes encontradas")
-        if valid_scholarships:
-            for scholarship in valid_scholarships:
-                st.markdown(scholarship)
-                st.markdown("---")
-        else:
-            st.write("No se encontraron becas vigentes que cumplan con los criterios especificados.")
-        
-        st.subheader("Resultados de búsqueda relacionados")
-        if search_results:
-            for result in search_results:
-                st.write(f"- [{result.get('title')}]({result.get('link')})")
-                st.write(result.get('snippet', ''))
-        else:
-            st.write("No se encontraron resultados de búsqueda adicionales.")
+    valid_scholarships, search_results = get_scholarship_info(campo_estudio, pais, nivel_estudios, pais_ciudadania)
+    
+    st.subheader("Becas vigentes encontradas")
+    if valid_scholarships:
+        for scholarship in valid_scholarships:
+            st.markdown(scholarship)
+            st.markdown("---")
     else:
-        st.warning("Por favor, completa todos los campos obligatorios.")
+        st.write("No se encontraron becas vigentes que cumplan con los criterios especificados.")
+    
+    st.subheader("Resultados de búsqueda relacionados")
+    if search_results:
+        for result in search_results:
+            st.write(f"- [{result.get('title')}]({result.get('link')})")
+            st.write(result.get('snippet', ''))
+    else:
+        st.write("No se encontraron resultados de búsqueda adicionales.")
