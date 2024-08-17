@@ -18,7 +18,7 @@ def parse_date(date_string):
     return None
 
 def get_scholarship_info(campo_estudio, pais, nivel_estudios, pais_ciudadania, fecha_limite):
-    prompt = "Proporciona información sobre becas para estudiar en cualquier país y nivel de estudios"
+    prompt = "Proporciona información sobre becas vigentes para estudiar en cualquier país y nivel de estudios"
 
     if campo_estudio:
         prompt += f" en el campo de estudio de {campo_estudio}"
@@ -38,7 +38,7 @@ def get_scholarship_info(campo_estudio, pais, nivel_estudios, pais_ciudadania, f
             "Content-Type": "application/json"
         },
         json={
-            "model": "togethercomputer/llama-2-70b-chat",
+            "model": "togethercomputer/llama-3.1-405b-chat",
             "prompt": prompt,
             "max_tokens": 1024,
             "temperature": 0.7
@@ -50,12 +50,16 @@ def get_scholarship_info(campo_estudio, pais, nivel_estudios, pais_ciudadania, f
     valid_scholarships = []
     for scholarship in scholarships:
         if scholarship.strip():
-            valid_scholarships.append(scholarship.strip())
+            date_match = re.search(r'Fecha límite de aplicación:?\s*(\d{2}/\d{2}/\d{4})', scholarship)
+            if date_match:
+                deadline = parse_date(date_match.group(1))
+                if deadline and deadline >= date.today():  
+                    valid_scholarships.append(scholarship.strip())
 
     search_results = []
     if campo_estudio or pais or nivel_estudios or pais_ciudadania or fecha_limite:
         current_year = datetime.now().year
-        search_query = f"becas {current_year}"
+        search_query = f"becas vigentes {current_year}"
         if campo_estudio:
             search_query += f" {campo_estudio}"
         if pais:
@@ -81,7 +85,7 @@ def get_scholarship_info(campo_estudio, pais, nivel_estudios, pais_ciudadania, f
     return valid_scholarships, search_results
 
 # Interfaz de Streamlit
-st.title("Buscador de Becas")
+st.title("Buscador de Becas Vigentes")
 
 campo_estudio = st.text_input("Campo de estudio (opcional)")
 pais = st.text_input("País de estudio (opcional)")
@@ -95,13 +99,13 @@ fecha_limite = st.date_input("Fecha límite de aplicación (opcional)")
 if st.button("Buscar becas"):
     valid_scholarships, search_results = get_scholarship_info(campo_estudio, pais, nivel_estudios, pais_ciudadania, fecha_limite)
     
-    st.subheader("Becas encontradas")
+    st.subheader("Becas vigentes encontradas")
     if valid_scholarships:
         for scholarship in valid_scholarships:
             st.markdown(scholarship)
             st.markdown("---")
     else:
-        st.write("No se encontraron becas que cumplan con los criterios especificados.")
+        st.write("")
     
     st.subheader("Resultados de búsqueda relacionados")
     if search_results:
