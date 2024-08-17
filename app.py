@@ -47,7 +47,7 @@ def get_scholarship_info(campo_estudio, pais, nivel_estudios, pais_ciudadania):
             date_match = re.search(r'Fecha límite de aplicación:?\s*(\d{2}/\d{2}/\d{4})', scholarship)
             if date_match:
                 deadline = parse_date(date_match.group(1))
-                if deadline and deadline >= date.today():  # Verificar que la fecha límite sea posterior a la fecha actual
+                if deadline and deadline >= date.today():  
                     valid_scholarships.append(scholarship.strip())
 
     # Llamada a la API de Serper para obtener resultados de búsqueda relacionados
@@ -79,7 +79,34 @@ nivel_estudios = st.selectbox("Nivel de estudios (opcional)", [
 pais_ciudadania = st.text_input("Mostrar solo becas disponibles para ciudadanos de (opcional)")
 
 if st.button("Buscar becas vigentes"):
-    valid_scholarships, search_results = get_scholarship_info(campo_estudio, pais, nivel_estudios, pais_ciudadania)
+    if campo_estudio or pais or nivel_estudios or pais_ciudadania:
+        valid_scholarships, search_results = get_scholarship_info(campo_estudio, pais, nivel_estudios, pais_ciudadania)
+    else:
+        prompt = "Proporciona información sobre becas vigentes para estudiar en cualquier país y nivel de estudios"
+        response = requests.post(
+            "https://api.together.xyz/inference",
+            headers={
+                "Authorization": f"Bearer {TOGETHER_API_KEY}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": "togethercomputer/llama-2-70b-chat",
+                "prompt": prompt,
+                "max_tokens": 1024,
+                "temperature": 0.7
+            }
+        )
+        ai_response = response.json().get("choices", [{}])[0].get("text", "")
+        scholarships = re.split(r'\n\d+\.', ai_response)
+        valid_scholarships = []
+        for scholarship in scholarships:
+            if scholarship.strip():
+                date_match = re.search(r'Fecha límite de aplicación:?\s*(\d{2}/\d{2}/\d{4})', scholarship)
+                if date_match:
+                    deadline = parse_date(date_match.group(1))
+                    if deadline and deadline >= date.today():  
+                        valid_scholarships.append(scholarship.strip())
+        search_results = []
     
     st.subheader("Becas vigentes encontradas")
     if valid_scholarships:
